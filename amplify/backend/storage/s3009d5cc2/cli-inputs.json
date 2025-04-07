@@ -1,0 +1,13 @@
+{
+  "resourceName": "s3009d5cc2",
+  "policyUUID": "009d5cc2",
+  "bucketName": "myphotosapp1676e2a1bb674832ad8d1b3ffade4cb8",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ"
+  ],
+  "triggerFunction": "myphotoresizer",
+  "groupAccess": {}
+}

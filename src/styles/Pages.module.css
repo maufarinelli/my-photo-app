@@ -1,0 +1,80 @@
+.main {
+  margin: 20px;
+}
+
+.gridTemplateColumns {
+  grid-template-columns: 1fr 1fr;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+@media screen and (min-width: 480px) {
+  .main {
+    margin: 20px;
+  }
+
+  .gridTemplateColumns {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .main {
+    margin: 20px;
+  }
+
+  .gridTemplateColumns {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
+
+@media screen and (min-width: 1024px) {
+  .main {
+    margin: 20px;
+  }
+
+  .gridTemplateColumns {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .main {
+    width: 1200px;
+    margin: 0 auto;
+  }
+
+  .gridTemplateColumns {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  }
+}
+
+/* slider */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+.sliderWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 40px 40px 20px;
+}
+
+.buttonClose {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: transparent;
+  border: none;
+  color: white;
+  font-size: 40px;
+  z-index: 10;
+  cursor: pointer;
+}

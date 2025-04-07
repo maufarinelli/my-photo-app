@@ -1,0 +1,34 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-myphotosapp-dev-803ad-authRole",
+      "UnauthRoleArn": "arn:aws:iam::963925517359:role/amplify-myphotosapp-dev-803ad-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::963925517359:role/amplify-myphotosapp-dev-803ad-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-myphotosapp-dev-803ad-deployment",
+      "UnauthRoleName": "amplify-myphotosapp-dev-803ad-unauthRole",
+      "StackName": "amplify-myphotosapp-dev-803ad",
+      "StackId": "arn:aws:cloudformation:us-east-1:963925517359:stack/amplify-myphotosapp-dev-803ad/c731b960-010e-11f0-87c4-0affe9f15e99",
+      "AmplifyAppId": "d8g0tsmebbdv8",
+      "APIGatewayAuthURL": "https://s3.amazonaws.com/amplify-myphotosapp-dev-803ad-deployment/amplify-cfn-templates/api/APIGatewayAuthStack.json"
+    },
+    "categories": {
+      "auth": {
+        "myphotosapp11137ecf": {},
+        "myphotosapp7ae71302": {}
+      },
+      "storage": {
+        "s3009d5cc2": {}
+      },
+      "function": {
+        "myphotoresizer": {
+          "deploymentBucketName": "amplify-myphotosapp-dev-803ad-deployment",
+          "s3Key": "amplify-builds/myphotoresizer-424851334c6a4c755a2f-build.zip"
+        }
+      },
+      "api": {
+        "myphotosapi": {}
+      }
+    }
+  }
+}
