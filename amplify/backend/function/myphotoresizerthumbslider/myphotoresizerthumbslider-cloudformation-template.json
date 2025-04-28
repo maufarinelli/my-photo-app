@@ -15,10 +15,6 @@
     },
     "s3Key": {
       "Type": "String"
-    },
-    "storages3009d5cc2BucketName": {
-      "Type": "String",
-      "Default": "storages3009d5cc2BucketName"
     }
   },
   "Conditions": {
@@ -51,12 +47,12 @@
         "FunctionName": {
           "Fn::If": [
             "ShouldNotCreateEnvResources",
-            "myphotoresizer",
+            "myphotoresizerthumbslider",
             {
               "Fn::Join": [
                 "",
                 [
-                  "myphotoresizer",
+                  "myphotoresizerthumbslider",
                   "-",
                   {
                     "Ref": "env"
@@ -73,9 +69,6 @@
             },
             "REGION": {
               "Ref": "AWS::Region"
-            },
-            "STORAGE_S3009D5CC2_BUCKETNAME": {
-              "Ref": "storages3009d5cc2BucketName"
             }
           }
         },
@@ -96,12 +89,12 @@
         "RoleName": {
           "Fn::If": [
             "ShouldNotCreateEnvResources",
-            "myphotosappLambdaRoleecaadf5f",
+            "myphotosappLambdaRole2cc35a85",
             {
               "Fn::Join": [
                 "",
                 [
-                  "myphotosappLambdaRoleecaadf5f",
+                  "myphotosappLambdaRole2cc35a85",
                   "-",
                   {
                     "Ref": "env"
@@ -167,62 +160,6 @@
                   }
                 ]
               }
-            }
-          ]
-        }
-      }
-    },
-    "AmplifyResourcesPolicy": {
-      "DependsOn": [
-        "LambdaExecutionRole"
-      ],
-      "Type": "AWS::IAM::Policy",
-      "Properties": {
-        "PolicyName": "amplify-lambda-execution-policy",
-        "Roles": [
-          {
-            "Ref": "LambdaExecutionRole"
-          }
-        ],
-        "PolicyDocument": {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Action": "s3:ListBucket",
-              "Resource": [
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:aws:s3:::",
-                      {
-                        "Ref": "storages3009d5cc2BucketName"
-                      }
-                    ]
-                  ]
-                }
-              ]
-            },
-            {
-              "Effect": "Allow",
-              "Action": [
-                "s3:GetObject"
-              ],
-              "Resource": [
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:aws:s3:::",
-                      {
-                        "Ref": "storages3009d5cc2BucketName"
-                      },
-                      "/*"
-                    ]
-                  ]
-                }
-              ]
             }
           ]
         }

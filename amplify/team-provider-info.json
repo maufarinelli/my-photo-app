@@ -23,7 +23,11 @@
       "function": {
         "myphotoresizer": {
           "deploymentBucketName": "amplify-myphotosapp-dev-803ad-deployment",
-          "s3Key": "amplify-builds/myphotoresizer-424851334c6a4c755a2f-build.zip"
+          "s3Key": "amplify-builds/myphotoresizer-6973392b712f555a7936-build.zip"
+        },
+        "myphotoresizerthumbslider": {
+          "deploymentBucketName": "amplify-myphotosapp-dev-803ad-deployment",
+          "s3Key": "amplify-builds/myphotoresizerthumbslider-75375763596a6f507153-build.zip"
         }
       },
       "api": {

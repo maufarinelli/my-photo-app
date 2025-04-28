@@ -1,7 +1,8 @@
-
-
-const sharp = require('sharp');
-const aws = require('aws-sdk');
+/* Amplify Params - DO NOT EDIT
+	ENV
+	REGION
+	STORAGE_S3009D5CC2_BUCKETNAME
+Amplify Params - DO NOT EDIT */const aws = require('aws-sdk');
 const s3 = new aws.S3();
 
 const BUCKET = 'myphotosapp1676e2a1bb674832ad8d1b3ffade4cb8803ad-dev';
@@ -15,64 +16,6 @@ const BUCKET = 'myphotosapp1676e2a1bb674832ad8d1b3ffade4cb8803ad-dev';
 //     Size: 1839798,
 //     StorageClass: 'STANDARD'
 //   },
-const createThumbnails = async (imagesFetched, route) => {
-    imagesFetched.Contents.map(async (imageContent) => {
-        const { Key } = imageContent;
-        if (Key.endsWith('/')) {
-            return;
-        }
-        const imageName = Key.split('/').pop();
-        console.log('imageName : ', imageName);
-
-        const thumbnailKey = `public/${route}/thumbnails/${imageName}`;
-        console.log('thumbnailKey : ', thumbnailKey);
-
-        let thumbnailFetched;
-        try {
-            thumbnailFetched = await s3.getObject({
-                Bucket: BUCKET,
-                Key: thumbnailKey
-            }).promise();
-            console.log('thumbnailFetched : ', thumbnailFetched);
-        } catch (error) {
-            console.error('Error creating thumbnail:', error);
-        }
-
-        if (!thumbnailFetched) {
-            console.log('GOING TO CREATE thumbnail : ');
-
-            const imageFetched = await s3.getObject({
-                Bucket: BUCKET,
-                Key
-            }).promise();
-
-            const sharpedImage = await sharp(imageFetched.Body);
-            const metadata = await sharpedImage.metadata();
-
-            let resizedImageThumbnail
-            if (metadata.width > metadata.height) {
-                // landscape
-                // thumbnail width is 220
-                resizedImageThumbnail = await sharpedImage.resize({
-                    width: 220,
-                }).withMetadata().toBuffer();
-            } else {
-                // portrait
-                // thumbnail height is 260
-                resizedImageThumbnail = await sharpedImage.resize({
-                    height: 220,
-                }).withMetadata().toBuffer();
-            }
-
-            console.log('PUT thumbnail : ');
-            return await s3.putObject({
-                Bucket: BUCKET,
-                Key: `public/${route}/thumbnails/${imageName}`,
-                Body: resizedImageThumbnail,
-            }).promise();
-        }
-    });
-};
 
 exports.handler = async (event, context) => {
     console.log(`EVENT: ${JSON.stringify(event)}`);
@@ -140,16 +83,9 @@ exports.handler = async (event, context) => {
         //     isBase64Encoded: true
         // };
 
-        // 
+        // TODO: NOT USING THIS LAMBDA ANYMORE.
+        // SHOULD DELETE IT ?
         const { route } = event.queryStringParameters;
-
-        // Handling thumbnails
-        const imagesFetched = await s3.listObjectsV2({
-            Bucket: BUCKET,
-            Prefix: `public/${route}/`
-        }).promise();
-        const thumbnailsCreation = await createThumbnails(imagesFetched, route);
-        console.log('thumbnailsCreation : ', thumbnailsCreation);
 
         // Fetching thumbnails
         const thumbnailsFetched = await s3.listObjectsV2({
@@ -157,17 +93,22 @@ exports.handler = async (event, context) => {
             Prefix: `public/${route}/thumbnails/`
         }).promise();
 
-        const thumbnailsPromises = thumbnailsFetched.Contents.map(async (imageContent) => {
+        const thumbnailsPromises = []
+        for (const imageContent of thumbnailsFetched.Contents) {
             const { Key } = imageContent;
             if (Key.endsWith('/')) {
-                return;
+                continue; // Skip folders
             }
-            const thumbnailFetched = await s3.getObject({
-                Bucket: BUCKET,
-                Key
-            }).promise();
-            return thumbnailFetched.Body.toString('base64');
-        });
+            try {
+                const thumbnailFetched = await s3.getObject({
+                    Bucket: BUCKET,
+                    Key
+                }).promise();
+                thumbnailsPromises.push({ imageKey: Key, thumbnail: thumbnailFetched.Body.toString('base64') });
+            } catch (error) {
+                console.error(`Error fetching thumbnail for Key: ${Key}`, error);
+            }
+        }
         const thumbnailsResults = await Promise.allSettled(thumbnailsPromises);
         const successfulThumbnails = thumbnailsResults
             .filter(input => input.status === 'fulfilled')

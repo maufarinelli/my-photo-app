@@ -28,9 +28,12 @@ const Home: React.FC = () => {
         });
         console.log("result ", result);
         const folders = result.items.filter(
-          (item) => item.path.endsWith("/") && item.path !== "public/"
+          (item) =>
+            item.path.endsWith("/") &&
+            item.path !== "public/" &&
+            !item.path.endsWith("thumbnails/") &&
+            !item.path.endsWith("slider/")
         );
-        console.log("folders ", folders);
         const sanitizedFolderNames = folders.map((folder) => ({
           ...folder,
           name: folder.path.replace("public/", "").replace("/", ""),

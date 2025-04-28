@@ -8,7 +8,17 @@
   margin-right: 20px;
 }
 
-@media screen and (min-width: 480px) {
+@media screen and (min-width: 7600px) {
+  .main {
+    margin: 0px;
+  }
+
+  .gridTemplateColumns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media screen and (min-width: 960px) {
   .main {
     margin: 20px;
   }
@@ -18,23 +28,13 @@
   }
 }
 
-@media screen and (min-width: 768px) {
-  .main {
-    margin: 20px;
-  }
-
-  .gridTemplateColumns {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-  }
-}
-
 @media screen and (min-width: 1024px) {
   .main {
     margin: 20px;
   }
 
   .gridTemplateColumns {
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 }
 
@@ -45,7 +45,7 @@
   }
 
   .gridTemplateColumns {
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   }
 }
 

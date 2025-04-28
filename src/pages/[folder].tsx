@@ -1,58 +1,69 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { Grid, useTheme } from "@aws-amplify/ui-react";
 import styles from "@/styles/Pages.module.css";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { AiFillCloseCircle } from "react-icons/ai";
 import "swiper/css";
-import axios from "axios";
-import { fetchAuthSession } from "aws-amplify/auth";
+// import axios from "axios";
+// import { fetchAuthSession } from "aws-amplify/auth";
 import { Navigation, Pagination } from "swiper/modules";
+import { StorageImage } from "@aws-amplify/ui-react-storage";
+import { list, ListOutputItemWithPath } from "aws-amplify/storage";
+import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
 
 const API_URL = "https://tllw3d65w2.execute-api.us-east-1.amazonaws.com/dev";
 
-// const PAGE_SIZE = 30;
-// let nextToken;
+const ImageRenderer: React.FC<
+  GridChildComponentProps<ListOutputItemWithPath[]>
+> = ({ columnIndex, rowIndex, style, data }) => {
+  const index = rowIndex * 5 + columnIndex;
+  if (!data[index]) {
+    return null;
+  }
+
+  const { path } = data[index];
+
+  return (
+    <div style={{ ...style, padding: "10px" }}>
+      <StorageImage
+        path={path}
+        alt=""
+        className={styles.virtualScrollerImage}
+        style={{
+          borderRadius: "10px",
+        }}
+        // onClick={() => handleImageClick(data[index])}
+      />
+    </div>
+  );
+};
 
 const Folder: React.FC = () => {
   const router = useRouter();
-  const { tokens } = useTheme();
-
-  // ListPaginateWithPathOutput | undefined
-  const [s3ContentInfo, setS3ContentInfo] = useState<string[]>();
+  const [thumbnails, setThumbnails] = useState<ListOutputItemWithPath[]>();
   const [isSliderMode, setIsSliderMode] = useState(false);
+  const [selectedSliderImage, setSelectedSliderImage] = useState<{
+    imageKey: string;
+    thumbnail: string;
+  }>();
 
   useEffect(() => {
-    const listObjects = async () => {
+    const listThumbnails = async () => {
       try {
-        // const result = await list({
-        //   path: `public/${router.query.folder}/`,
-        //   options: {
-        //     pageSize: PAGE_SIZE,
-        //     nextToken,
-        //   },
-        // });
-        // console.log("result ", result);
-        const { tokens } = await fetchAuthSession();
-        const authToken = tokens?.idToken?.toString();
-
-        const result = await axios.get(
-          `${API_URL}/items?route=${router.query.folder}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: authToken,
-            },
-          }
+        const thumbnailsResult = await list({
+          path: `public/${router.query.folder}/thumbnails`,
+        });
+        console.log("thumbnailsResult ", thumbnailsResult);
+        const sanitizedThumbnails = thumbnailsResult.items.filter(
+          (item) => !item.path.endsWith("/")
         );
-        console.log("result ", result);
-        setS3ContentInfo(result.data);
+        setThumbnails(sanitizedThumbnails);
       } catch (error) {
         console.log(error);
       }
     };
 
-    listObjects();
+    listThumbnails();
   }, [router.query.folder]);
 
   return (
@@ -61,22 +72,19 @@ const Folder: React.FC = () => {
         <h1>Folder: {router.query.folder}</h1>
       </header>
 
-      <Grid className={styles.gridTemplateColumns} gap={tokens.space.small}>
-        {s3ContentInfo?.map((item) => {
-          return (
-            item && (
-              <div style={{ textAlign: "center" }} key={item}>
-                <img
-                  src={`data:image/jpeg;base64, ${item}`}
-                  alt={"item"}
-                  onClick={() => setIsSliderMode(true)}
-                  style={{ borderRadius: "10px" }}
-                />
-              </div>
-            )
-          );
-        })}
-      </Grid>
+      {thumbnails && (
+        <Grid
+          columnCount={5}
+          columnWidth={1200 / 5}
+          height={window.innerHeight - 70}
+          rowCount={thumbnails.length / 5}
+          rowHeight={230}
+          width={1200}
+          itemData={thumbnails}
+        >
+          {ImageRenderer}
+        </Grid>
+      )}
 
       {isSliderMode && (
         <>
@@ -97,21 +105,23 @@ const Folder: React.FC = () => {
               style={{ textAlign: "center" }}
               modules={[Navigation, Pagination]}
             >
-              {s3ContentInfo?.map(
-                (item) =>
-                  item && (
-                    <SwiperSlide key={item}>
-                      <img
-                        src={`data:image/jpeg;base64, ${item}`}
-                        alt={"item"}
-                        style={{
-                          maxWidth: "95vw",
-                          maxHeight: "95vh",
-                        }}
-                        onClick={() => setIsSliderMode(true)}
-                      />
-                    </SwiperSlide>
-                  )
+              {selectedSliderImage && (
+                <SwiperSlide key={selectedSliderImage.imageKey}>
+                  <StorageImage
+                    path={selectedSliderImage.imageKey
+                      .replace("public/public/", "public/")
+                      .replace("thumbnails/", "")}
+                    style={{
+                      maxWidth: "95vw",
+                      maxHeight: "95vh",
+                    }}
+                    alt={selectedSliderImage.imageKey}
+                    loading="lazy"
+                    onError={(e) => {
+                      console.log("error loading image", e);
+                    }}
+                  />
+                </SwiperSlide>
               )}
             </Swiper>
           </div>
