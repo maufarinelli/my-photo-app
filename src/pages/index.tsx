@@ -76,7 +76,12 @@ const Home: React.FC = () => {
                     <Card
                       variation="outlined"
                       key={`${folder.eTag}-${folder.path}`}
-                      style={{ borderRadius: "10px" }}
+                      style={{
+                        borderRadius: "10px",
+                        backgroundColor: "#3b3b3b",
+                        borderColor: "#505050",
+                        boxShadow: "rgb(112 109 14) 0px 1px 1px",
+                      }}
                     >
                       <Link href={folder.name}>
                         <Flex

@@ -2,50 +2,31 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/Pages.module.css";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
 import { AiFillCloseCircle } from "react-icons/ai";
 import "swiper/css";
-// import axios from "axios";
-// import { fetchAuthSession } from "aws-amplify/auth";
 import { Navigation, Pagination } from "swiper/modules";
 import { StorageImage } from "@aws-amplify/ui-react-storage";
 import { list, ListOutputItemWithPath } from "aws-amplify/storage";
-import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
+import VirtualScroller from "./components/VirtualScroller/VirtualScroller";
 
-const API_URL = "https://tllw3d65w2.execute-api.us-east-1.amazonaws.com/dev";
-
-const ImageRenderer: React.FC<
-  GridChildComponentProps<ListOutputItemWithPath[]>
-> = ({ columnIndex, rowIndex, style, data }) => {
-  const index = rowIndex * 5 + columnIndex;
-  if (!data[index]) {
-    return null;
-  }
-
-  const { path } = data[index];
-
-  return (
-    <div style={{ ...style, padding: "10px" }}>
-      <StorageImage
-        path={path}
-        alt=""
-        className={styles.virtualScrollerImage}
-        style={{
-          borderRadius: "10px",
-        }}
-        // onClick={() => handleImageClick(data[index])}
-      />
-    </div>
-  );
-};
+// const API_URL = "https://tllw3d65w2.execute-api.us-east-1.amazonaws.com/dev";
+const PREVIOUS_IMAGES_QTY = 10;
+const MINIMUM_IMAGES_QTY_WHEN_10_PREVIOUS_LOADED = PREVIOUS_IMAGES_QTY + 2;
 
 const Folder: React.FC = () => {
   const router = useRouter();
   const [thumbnails, setThumbnails] = useState<ListOutputItemWithPath[]>();
+  const [sliderImages, setSliderImages] = useState<ListOutputItemWithPath[]>();
   const [isSliderMode, setIsSliderMode] = useState(false);
-  const [selectedSliderImage, setSelectedSliderImage] = useState<{
-    imageKey: string;
-    thumbnail: string;
-  }>();
+  const [loadedSliderImages, setLoadedSliderImages] = useState<
+    ListOutputItemWithPath[]
+  >([]);
+  const [selectedSliderImageIndex, setSelectedSliderImageIndex] =
+    useState<number>();
+  const [sliderLoadededIndexes, setSliderLoadededIndexes] = useState<number[]>(
+    []
+  );
 
   useEffect(() => {
     const listThumbnails = async () => {
@@ -53,11 +34,15 @@ const Folder: React.FC = () => {
         const thumbnailsResult = await list({
           path: `public/${router.query.folder}/thumbnails`,
         });
-        console.log("thumbnailsResult ", thumbnailsResult);
         const sanitizedThumbnails = thumbnailsResult.items.filter(
           (item) => !item.path.endsWith("/")
         );
         setThumbnails(sanitizedThumbnails);
+        const sliderImages = sanitizedThumbnails.map((item) => ({
+          ...item,
+          path: item.path.replace("/thumbnails/", "/slider/"),
+        }));
+        setSliderImages(sliderImages);
       } catch (error) {
         console.log(error);
       }
@@ -66,6 +51,61 @@ const Folder: React.FC = () => {
     listThumbnails();
   }, [router.query.folder]);
 
+  const handleImageClick = (item: ListOutputItemWithPath, index: number) => {
+    setSelectedSliderImageIndex(index);
+
+    const imagesToLoad = [sliderImages?.[index]];
+    const indexToLoad = [index];
+
+    // To preload the 10 previous images, if available
+    if (index !== 0) {
+      let indexBackwards = index - 1;
+      for (let i = 0; i < PREVIOUS_IMAGES_QTY; i++) {
+        indexToLoad.unshift(indexBackwards);
+        imagesToLoad.unshift(sliderImages?.[indexBackwards]);
+        if (indexBackwards === 0) break;
+        indexBackwards--;
+      }
+    }
+    // To preload the next images
+    if (sliderImages && index !== sliderImages.length - 1) {
+      indexToLoad.push(index + 1);
+      imagesToLoad?.push(sliderImages?.[index + 1]);
+    }
+
+    setSliderLoadededIndexes(indexToLoad);
+    setLoadedSliderImages(imagesToLoad);
+    setIsSliderMode(true);
+  };
+
+  const handleSlideChange = (swiper: SwiperType) => {
+    const { activeIndex, swipeDirection } = swiper;
+
+    if (swipeDirection === "next") {
+      const lastIndex = sliderLoadededIndexes[sliderLoadededIndexes.length - 1];
+
+      if (
+        sliderImages &&
+        activeIndex !== sliderImages?.length - 1 &&
+        lastIndex !== sliderImages?.length - 1
+      ) {
+        const indexToLoad = lastIndex + 1;
+
+        setSliderLoadededIndexes((prev) => {
+          const newIndexes = [...prev];
+          newIndexes.push(indexToLoad);
+
+          return newIndexes;
+        });
+        setLoadedSliderImages((prev) => {
+          const newImages = [...prev];
+          newImages.push(sliderImages?.[indexToLoad]);
+          return newImages;
+        });
+      }
+    }
+  };
+
   return (
     <main className={styles.main}>
       <header style={{ margin: "20px" }}>
@@ -73,17 +113,10 @@ const Folder: React.FC = () => {
       </header>
 
       {thumbnails && (
-        <Grid
-          columnCount={5}
-          columnWidth={1200 / 5}
-          height={window.innerHeight - 70}
-          rowCount={thumbnails.length / 5}
-          rowHeight={230}
-          width={1200}
-          itemData={thumbnails}
-        >
-          {ImageRenderer}
-        </Grid>
+        <VirtualScroller
+          thumbnails={thumbnails}
+          handleImageClick={handleImageClick}
+        />
       )}
 
       {isSliderMode && (
@@ -99,30 +132,34 @@ const Folder: React.FC = () => {
             <Swiper
               spaceBetween={20}
               slidesPerView={1}
-              onSlideChange={() => console.log("slide change")}
-              onSwiper={(swiper) => console.log(swiper)}
+              onSlideChange={handleSlideChange}
               centeredSlides={true}
               style={{ textAlign: "center" }}
               modules={[Navigation, Pagination]}
+              initialSlide={
+                loadedSliderImages.length >=
+                MINIMUM_IMAGES_QTY_WHEN_10_PREVIOUS_LOADED
+                  ? 10
+                  : selectedSliderImageIndex
+              }
             >
-              {selectedSliderImage && (
-                <SwiperSlide key={selectedSliderImage.imageKey}>
-                  <StorageImage
-                    path={selectedSliderImage.imageKey
-                      .replace("public/public/", "public/")
-                      .replace("thumbnails/", "")}
-                    style={{
-                      maxWidth: "95vw",
-                      maxHeight: "95vh",
-                    }}
-                    alt={selectedSliderImage.imageKey}
-                    loading="lazy"
-                    onError={(e) => {
-                      console.log("error loading image", e);
-                    }}
-                  />
-                </SwiperSlide>
-              )}
+              {loadedSliderImages &&
+                loadedSliderImages.map((selectedSliderImage) => (
+                  <SwiperSlide key={selectedSliderImage.eTag}>
+                    <StorageImage
+                      path={selectedSliderImage.path}
+                      style={{
+                        maxWidth: "95vw",
+                        maxHeight: "95vh",
+                      }}
+                      alt={selectedSliderImage.imageKey}
+                      loading="lazy"
+                      onError={(e) => {
+                        console.log("error loading image", e);
+                      }}
+                    />
+                  </SwiperSlide>
+                ))}
             </Swiper>
           </div>
         </>
