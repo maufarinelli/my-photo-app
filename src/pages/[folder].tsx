@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import styles from "@/styles/Pages.module.css";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,6 +9,7 @@ import { Navigation, Pagination } from "swiper/modules";
 import { StorageImage } from "@aws-amplify/ui-react-storage";
 import { list, ListOutputItemWithPath } from "aws-amplify/storage";
 import VirtualScroller from "./components/VirtualScroller/VirtualScroller";
+import { getUrl } from "@aws-amplify/storage";
 
 // const API_URL = "https://tllw3d65w2.execute-api.us-east-1.amazonaws.com/dev";
 const PREVIOUS_IMAGES_QTY = 10;
@@ -18,6 +19,11 @@ const Folder: React.FC = () => {
   const router = useRouter();
   const [thumbnails, setThumbnails] = useState<ListOutputItemWithPath[]>();
   const [sliderImages, setSliderImages] = useState<ListOutputItemWithPath[]>();
+  // sliderVideos is a map of path fetch as key and video url as value
+  const [sliderVideos, setSliderVideos] = useState<Map<string, string>>(
+    new Map()
+  );
+
   const [isSliderMode, setIsSliderMode] = useState(false);
   const [loadedSliderImages, setLoadedSliderImages] = useState<
     ListOutputItemWithPath[]
@@ -27,6 +33,21 @@ const Folder: React.FC = () => {
   const [sliderLoadededIndexes, setSliderLoadededIndexes] = useState<number[]>(
     []
   );
+
+  const getVideo = useCallback(async (path: string) => {
+    try {
+      const getUrlResult = await getUrl({
+        path,
+        options: {
+          validateObjectExistence: false, // Check if object exists before creating a URL
+          expiresIn: 900, // validity of the URL, in seconds. defaults to 900 (15 minutes) and maxes at 3600 (1 hour)
+        },
+      });
+      return getUrlResult.url.href;
+    } catch (err) {
+      console.error("Error getting Video: ", err);
+    }
+  }, []);
 
   useEffect(() => {
     const listThumbnails = async () => {
@@ -38,18 +59,41 @@ const Folder: React.FC = () => {
           (item) => !item.path.endsWith("/")
         );
         setThumbnails(sanitizedThumbnails);
+
         const sliderImages = sanitizedThumbnails.map((item) => ({
           ...item,
           path: item.path.replace("/thumbnails/", "/slider/"),
         }));
         setSliderImages(sliderImages);
+
+        const sliderVideosPromises = await Promise.allSettled(
+          sliderImages
+            .map(async (item) => {
+              if (item.path.endsWith(".mp4")) {
+                return await {
+                  path: item.path,
+                  url: await getVideo(item.path),
+                };
+              }
+              return undefined;
+            })
+            .filter((promise) => promise !== undefined)
+        );
+        const sliderVideos = sliderVideosPromises
+          .filter((promise) => promise.status === "fulfilled")
+          .map((result) => result.value)
+          .reduce((acc, curr) => {
+            acc.set(curr?.path ?? "", curr?.url ?? "");
+            return acc;
+          }, new Map<string, string>());
+        setSliderVideos(sliderVideos);
       } catch (error) {
         console.log(error);
       }
     };
 
     listThumbnails();
-  }, [router.query.folder]);
+  }, [router.query.folder, getVideo]);
 
   const handleImageClick = (item: ListOutputItemWithPath, index: number) => {
     setSelectedSliderImageIndex(index);
@@ -146,18 +190,33 @@ const Folder: React.FC = () => {
               {loadedSliderImages &&
                 loadedSliderImages.map((selectedSliderImage) => (
                   <SwiperSlide key={selectedSliderImage.eTag}>
-                    <StorageImage
-                      path={selectedSliderImage.path}
-                      style={{
-                        maxWidth: "95vw",
-                        maxHeight: "95vh",
-                      }}
-                      alt={selectedSliderImage.imageKey}
-                      loading="lazy"
-                      onError={(e) => {
-                        console.log("error loading image", e);
-                      }}
-                    />
+                    {selectedSliderImage.path.endsWith(".mp4") ? (
+                      <video
+                        controls
+                        style={{
+                          maxWidth: "95vw",
+                          maxHeight: "95vh",
+                        }}
+                      >
+                        <source
+                          src={sliderVideos.get(selectedSliderImage.path) ?? ""}
+                          type="video/mp4"
+                        />
+                      </video>
+                    ) : (
+                      <StorageImage
+                        path={selectedSliderImage.path}
+                        style={{
+                          maxWidth: "95vw",
+                          maxHeight: "95vh",
+                        }}
+                        alt={selectedSliderImage.imageKey}
+                        loading="lazy"
+                        onError={(e) => {
+                          console.log("error loading image", e);
+                        }}
+                      />
+                    )}
                   </SwiperSlide>
                 ))}
             </Swiper>

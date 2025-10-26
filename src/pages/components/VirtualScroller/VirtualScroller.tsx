@@ -23,14 +23,24 @@ const ImageRenderer: React.FC<
 
   return (
     <div style={{ ...style }}>
-      <StorageImage
-        path={path}
-        alt=""
-        style={{
-          borderRadius: "10px",
-        }}
-        onClick={() => handleImageClick(thumbnails[index], index)}
-      />
+      {path.endsWith(".mp4") ? (
+        <video
+          controls
+          style={{ borderRadius: "10px" }}
+          onClick={() => handleImageClick(thumbnails[index], index)}
+        >
+          <source src={path} type="video/mp4" />
+        </video>
+      ) : (
+        <StorageImage
+          path={path}
+          alt=""
+          style={{
+            borderRadius: "10px",
+          }}
+          onClick={() => handleImageClick(thumbnails[index], index)}
+        />
+      )}
     </div>
   );
 };
