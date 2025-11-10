@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1692.0",
-    "sharp": "^0.34.1"
+    "fluent-ffmpeg": "^2.1.3",
+    "sharp": "^0.34.5"
   },
   "scripts": {
     "install": "npm install --os=linux --cpu=x64 --include=optional sharp"

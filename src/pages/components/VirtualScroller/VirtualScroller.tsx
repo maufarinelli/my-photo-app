@@ -1,10 +1,10 @@
-import React, { use, useCallback, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { StorageImage } from "@aws-amplify/ui-react-storage";
 import { ListOutputItemWithPath } from "aws-amplify/storage";
 import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
 
 const HEADER_HEIGHT = 90;
-const ROW_HEIGHT = 230;
+const ROW_HEIGHT = 110;
 
 const ImageRenderer: React.FC<
   GridChildComponentProps<{
@@ -61,13 +61,15 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
   };
 
   const getGridRows = () => {
-    let GRID_ROWS = 5;
-    if (window.innerWidth <= 768) {
-      GRID_ROWS = 2;
-    } else if (window.innerWidth > 768 && window.innerWidth <= 1024) {
-      GRID_ROWS = 3;
-    } else if (window.innerWidth > 1024 && window.innerWidth <= 1200) {
+    let GRID_ROWS = 10;
+    if (window.innerWidth <= 620) {
       GRID_ROWS = 4;
+    } else if (window.innerWidth > 620 && window.innerWidth <= 768) {
+      GRID_ROWS = 6;
+    } else if (window.innerWidth > 768 && window.innerWidth <= 1024) {
+      GRID_ROWS = 7;
+    } else if (window.innerWidth > 1024 && window.innerWidth <= 1200) {
+      GRID_ROWS = 10;
     }
     return GRID_ROWS;
   };

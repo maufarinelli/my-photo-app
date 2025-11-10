@@ -1,6 +1,8 @@
 const sharp = require('sharp');
 const aws = require('aws-sdk');
 const s3 = new aws.S3();
+const ffmpeg = require('fluent-ffmpeg');
+const { Writable } = require('stream');
 
 /**
  * 
@@ -8,17 +10,13 @@ const s3 = new aws.S3();
  * @param {*} folder One of the folders in the bucket
  * @param {*} bucket The bucket name
  * @param {*} type thumbnails or slider
- * @param {*} width 
  */
 const createResizedImages = async (imagesFetched, folder, bucket, type) => {
     const imageFetchedPromises = [];
     for (const imageContent of imagesFetched.Contents) {
         console.log('========= imageContent', imageContent);
         const { Key } = imageContent;
-        if (Key.endsWith('/')) {
-            continue; // Skip if it's a folder
-        }
-        const imageName = Key.split('/').pop();
+        let imageName = Key.split('/').pop();
         const imageKey = `public/${folder}/${type}/${imageName}`;
 
         let imageFetched;
@@ -42,23 +40,32 @@ const createResizedImages = async (imagesFetched, folder, bucket, type) => {
                 Key
             }).promise();
 
+            // IMAGES
             const sharpedImage = await sharp(originalImageFetched.Body);
             const metadata = await sharpedImage.metadata();
 
             let resizedImage;
-            const size = type === 'thumbnails' ? 220 : 1920;
-            if (metadata.width > metadata.height) {
-                // landscape
-                // thumbnail width is 220 and slider width is 1920
+            const size = type === 'thumbnails' ? 96 : 1920;
+            if (type === 'thumbnails') {
                 resizedImage = await sharpedImage.resize({
                     width: size,
+                    height: size,
+                    fit: 'cover',
                 }).withMetadata().toBuffer();
             } else {
-                // portrait
-                // thumbnail height is 220 and slider height is 1920
-                resizedImage = await sharpedImage.resize({
-                    height: size,
-                }).withMetadata().toBuffer();
+                if (metadata.width > metadata.height) {
+                    // landscape
+                    // thumbnail width is 220 and slider width is 1920
+                    resizedImage = await sharpedImage.resize({
+                        width: size,
+                    }).withMetadata().toBuffer();
+                } else {
+                    // portrait
+                    // thumbnail height is 220 and slider height is 1920
+                    resizedImage = await sharpedImage.resize({
+                        height: size,
+                    }).withMetadata().toBuffer();
+                }
             }
 
             console.log(`PUT ${type} image `);
@@ -67,32 +74,124 @@ const createResizedImages = async (imagesFetched, folder, bucket, type) => {
                 Key: `public/${folder}/${type}/${imageName}`,
                 Body: resizedImage,
             }).promise();
+
         }
     };
     await Promise.all(imageFetchedPromises);
 };
 
+/**
+ * 
+ * @param {*} videosFetched 
+ * @param {*} folder One of the folders in the bucket
+ * @param {*} bucket The bucket name
+ */
+const createVideoThumbnail = async (videosFetched, folder, bucket) => {
+    const folderType = 'thumbnails';
+    const videoFetchedPromises = [];
+    for (const videoContent of videosFetched.Contents) {
+        console.log('========= videoContent', videoContent);
+        const { Key } = videoContent;
+        if (Key.endsWith('/')) {
+            console.log('######### Skipping folder ', Key);
+            continue; // Skip if it's a folder or a video for slider
+        }
+
+        const videoThumbnailName = Key.split('/').pop().replace('.mp4', '.png');
+        const videoThumbnailKey = `public/${folder}/${folderType}/${videoThumbnailName}`;
+
+        let videoThumbnailFetched;
+        try {
+            console.log('^^^^^^^^^ Going to fetch ', videoThumbnailKey);
+            videoThumbnailFetched = await s3.getObject({
+                Bucket: bucket,
+                Key: videoThumbnailKey
+            }).promise();
+            console.log('%%%%%%%%%%%%% videoThumbnailFetched : ', videoThumbnailFetched);
+            videoFetchedPromises.push(videoThumbnailFetched);
+        } catch (error) {
+            console.error('Error fetching video:', error);
+        }
+
+        if (!videoThumbnailFetched) {
+            console.log(`GOING TO CREATE ${folderType} thumbnail!`);
+
+            const originalVideoFetched = await s3.getObject({
+                Bucket: bucket,
+                Key
+            }).promise();
+
+            // VIDEOS
+            console.log('######### Creating video thumbnail for ', Key);
+            console.log('######### originalVideoFetched : ', originalVideoFetched);
+            let screenshotBuffer = Buffer.from([]); // Initialize an empty buffer
+
+            const writableStream = new Writable({
+                write(chunk, encoding, callback) {
+                    screenshotBuffer = Buffer.concat([screenshotBuffer, chunk]);
+                    callback();
+                }
+            });
+
+            console.log('######### Starting to create video thumbnail for ', Key);
+            ffmpeg(originalVideoFetched.Body)
+                .seekInput('00:00:01') // Seek to 1 seconds into the video
+                .frames(1) // Extract only one frame
+                .outputOptions('-f png') // Output as an image format (e.g., JPEG, PNG)
+                .outputOptions('-vframes 1') // Ensure only one frame is processed
+                .outputOptions('-c:v mjpeg') // Specify the video codec for the output image (e.g., Motion JPEG)
+                .outputOptions('-q:v 2') // Set the quality (for JPEG, 1-31, lower is better)
+                .noAudio() // No audio output needed for a screenshot
+                .toFormat('png') // Output format (e.g., 'mjpeg' or 'png')
+                .pipe(writableStream) // Pipe the output to the writable stream
+                .on('end', () => {
+                    // The screenshotBuffer now contains the image data
+                    console.log('Screenshot captured in memory:', screenshotBuffer);
+                    // You can now process or save the buffer as needed
+                })
+                .on('error', (err) => {
+                    console.error('An error occurred: ' + err.message);
+                });
+
+            console.log('######### Creating video thumbnail for ', Key);
+            console.log(`PUT ${folderType} image `);
+            return await s3.putObject({
+                Bucket: bucket,
+                Key: `public/${folder}/${folderType}/${videoThumbnailName}`,
+                Body: screenshotBuffer,
+            }).promise();
+        };
+        await Promise.all(videoFetchedPromises);
+    };
+}
+
 exports.handler = async (event, context) => {
     console.log(`EVENT: ${JSON.stringify(event)}`);
     console.log(`CONTEXT: ${JSON.stringify(context)}`);
 
-    if (event.Records && event.Records[0].eventName === 'ObjectCreated:Put') {
+    if (event.Records) {
         const BUCKET = event.Records[0].s3.bucket.name;
         const KEY = event.Records[0].s3.object.key.split('/')[1];
-
         const folder = KEY.replace("public/", "").split('/')[0];
 
-        // Fetching all images in the folder
-        const imagesFetched = await s3.listObjectsV2({
+        // Fetching all images/videos in the folder
+        const objectFetched = await s3.listObjectsV2({
             Bucket: BUCKET,
             Prefix: `public/${folder}/`
         }).promise();
 
-        // Handling thumbnails
-        await createResizedImages(imagesFetched, folder, BUCKET, 'thumbnails');
+        if (event.Records[0].eventName === 'ObjectCreated:CompleteMultipartUpload' && event.Records[0].s3.object.key.endsWith('.mp4')) {
+            await createVideoThumbnail(objectFetched, folder, BUCKET);
+        } else if (event.Records[0].eventName === 'ObjectCreated:Put') {
+            console.log('######### objectFetched : ', objectFetched);
 
-        // Handling slider images
-        await createResizedImages(imagesFetched, folder, BUCKET, 'slider');
+            // Handling thumbnails
+            await createResizedImages(objectFetched, folder, BUCKET, 'thumbnails');
+
+            // Handling slider images
+            await createResizedImages(objectFetched, folder, BUCKET, 'slider');
+        }
+
     }
 
     return {
