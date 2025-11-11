@@ -67,17 +67,19 @@ const Folder: React.FC = () => {
         setSliderImages(sliderImages);
 
         const sliderVideosPromises = await Promise.allSettled(
-          sliderImages
-            .map(async (item) => {
-              if (item.path.endsWith(".mp4")) {
-                return await {
-                  path: item.path,
-                  url: await getVideo(item.path),
-                };
-              }
-              return undefined;
-            })
-            .filter((promise) => promise !== undefined)
+          sliderImages.map(async (item) => {
+            if (item.path.endsWith("-video.png")) {
+              return await {
+                path: item.path.replace("-video.png", ".mp4"),
+                url: await getVideo(
+                  item.path
+                    .replace("/slider/", "/")
+                    .replace("-video.png", ".mp4")
+                ),
+              };
+            }
+            return undefined;
+          })
         );
         const sliderVideos = sliderVideosPromises
           .filter((promise) => promise.status === "fulfilled")
@@ -117,8 +119,19 @@ const Folder: React.FC = () => {
       imagesToLoad?.push(sliderImages?.[index + 1]);
     }
 
+    // Transform path of .png images (videos thumbnails) to to .mp4
+    const imagesToLoadTransformed = imagesToLoad.map((image) => {
+      if (image.path.endsWith("-video.png")) {
+        return {
+          ...image,
+          path: image.path.replace("-video.png", ".mp4"),
+        };
+      }
+      return image;
+    });
+
     setSliderLoadededIndexes(indexToLoad);
-    setLoadedSliderImages(imagesToLoad);
+    setLoadedSliderImages(imagesToLoadTransformed);
     setIsSliderMode(true);
   };
 
