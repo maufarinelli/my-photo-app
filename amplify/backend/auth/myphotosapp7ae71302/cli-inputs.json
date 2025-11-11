@@ -6,9 +6,9 @@
     "resourceNameTruncated": "myphot7ae71302",
     "userPoolName": "myphotosapp7ae71302_userpool_7ae71302",
     "autoVerifiedAttributes": [
-      "email"
+      "phone_number"
     ],
-    "mfaConfiguration": "OFF",
+    "mfaConfiguration": "OPTIONAL",
     "mfaTypes": [
       "SMS Text Message"
     ],
@@ -24,7 +24,7 @@
     ],
     "aliasAttributes": [],
     "userpoolClientGenerateSecret": false,
-    "userpoolClientRefreshTokenValidity": 30,
+    "userpoolClientRefreshTokenValidity": "1",
     "userpoolClientWriteAttributes": [
       "email"
     ],
@@ -32,11 +32,11 @@
       "email"
     ],
     "userpoolClientLambdaRole": "myphot7ae71302_userpoolclient_lambda_role",
-    "userpoolClientSetAttributes": false,
+    "userpoolClientSetAttributes": true,
     "sharedId": "7ae71302",
     "resourceName": "myphotosapp7ae71302",
     "authSelections": "identityPoolAndUserPool",
-    "useDefault": "default",
+    "useDefault": "manual",
     "usernameAttributes": [
       "email"
     ],
@@ -44,6 +44,29 @@
     "userPoolGroupList": [],
     "serviceName": "Cognito",
     "usernameCaseSensitive": false,
-    "useEnabledMfas": true
+    "useEnabledMfas": true,
+    "authRoleArn": {
+      "Fn::GetAtt": [
+        "AuthRole",
+        "Arn"
+      ]
+    },
+    "unauthRoleArn": {
+      "Fn::GetAtt": [
+        "UnauthRole",
+        "Arn"
+      ]
+    },
+    "breakCircularDependency": true,
+    "dependsOn": [],
+    "thirdPartyAuth": false,
+    "userPoolGroups": false,
+    "adminQueries": false,
+    "hostedUI": false,
+    "authProviders": [],
+    "parentStack": {
+      "Ref": "AWS::StackId"
+    },
+    "permissions": []
   }
 }

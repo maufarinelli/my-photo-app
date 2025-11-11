@@ -52,9 +52,11 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
 
   const getGridRows = () => {
     let GRID_ROWS = 10;
-    if (window.innerWidth <= 620) {
+    if (window.innerWidth <= 470) {
+      GRID_ROWS = 3;
+    } else if (window.innerWidth > 470 && window.innerWidth <= 640) {
       GRID_ROWS = 4;
-    } else if (window.innerWidth > 620 && window.innerWidth <= 768) {
+    } else if (window.innerWidth > 640 && window.innerWidth <= 768) {
       GRID_ROWS = 6;
     } else if (window.innerWidth > 768 && window.innerWidth <= 1024) {
       GRID_ROWS = 7;
@@ -87,6 +89,9 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
 
   return (
     <Grid
+      style={{
+        margin: "0 10px",
+      }}
       columnCount={gridRows}
       columnWidth={(fullWidth - 20) / gridRows}
       height={window.innerHeight - HEADER_HEIGHT}

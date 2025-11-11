@@ -54,7 +54,9 @@ const Home: React.FC = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Authenticator signUpAttributes={["email", "preferred_username"]}>
+      <Authenticator
+        signUpAttributes={["email", "phone_number", "preferred_username"]}
+      >
         <div className={`${styles.page}`}>
           <main className={styles.main}>
             {user ? (

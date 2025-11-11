@@ -20,7 +20,7 @@
       "customAuth": false,
       "dependsOn": [],
       "frontendAuthConfig": {
-        "mfaConfiguration": "OFF",
+        "mfaConfiguration": "OPTIONAL",
         "mfaTypes": [
           "SMS"
         ],
@@ -36,7 +36,7 @@
           "EMAIL"
         ],
         "verificationMechanisms": [
-          "EMAIL"
+          "PHONE_NUMBER"
         ]
       },
       "providerPlugin": "awscloudformation",

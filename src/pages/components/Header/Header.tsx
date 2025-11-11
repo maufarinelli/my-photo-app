@@ -12,11 +12,25 @@ const Header: React.FC<{ title: string }> = ({ title }) => {
     <header style={{ margin: "20px" }}>
       <Flex justifyContent="space-between">
         {pathname !== "/" && (
-          <Link href="/">
+          <Link
+            href="/"
+            style={{
+              alignSelf: "center",
+            }}
+          >
             <BsArrowLeftCircleFill size={24} />
           </Link>
         )}
-        <h1 style={{ flex: 1, textAlign: "center" }}>{title}</h1>
+        <h1
+          style={{
+            flex: 1,
+            textAlign: "center",
+            fontSize: pathname === "/" ? "24px" : "20px",
+            alignSelf: "center",
+          }}
+        >
+          {title}
+        </h1>
         <button
           onClick={signOut}
           style={{
@@ -25,7 +39,8 @@ const Header: React.FC<{ title: string }> = ({ title }) => {
             boxShadow: "0px 1px 1px rgba(0, 0, 0, 0.1)",
             color: "#333",
             borderRadius: "5px",
-            padding: "0 10px",
+            padding: "10px",
+            alignSelf: "flex-start",
           }}
         >
           Sign out
