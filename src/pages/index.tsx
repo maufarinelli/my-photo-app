@@ -12,12 +12,11 @@ import { list, ListOutputItemWithPath } from "aws-amplify/storage";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AiOutlineFolderOpen } from "react-icons/ai";
+import Header from "./components/Header/Header";
 
 const Home: React.FC = () => {
   const { tokens } = useTheme();
-  const { user, signOut, toSignIn } = useAuthenticator((context) => [
-    context.user,
-  ]);
+  const { user, toSignIn } = useAuthenticator((context) => [context.user]);
   const [folders, setFolders] = useState<ListOutputItemWithPath[]>([]);
 
   useEffect(() => {
@@ -60,14 +59,7 @@ const Home: React.FC = () => {
           <main className={styles.main}>
             {user ? (
               <>
-                <header style={{ margin: "20px" }}>
-                  <Flex justifyContent="space-between">
-                    <h1 style={{ flex: 1, textAlign: "center" }}>
-                      My Photos App
-                    </h1>
-                    <button onClick={signOut}>Sign out</button>
-                  </Flex>
-                </header>
+                <Header title="My Photos App" />
                 <Grid
                   className={styles.gridTemplateColumns}
                   gap={tokens.space.small}
@@ -77,10 +69,11 @@ const Home: React.FC = () => {
                       variation="outlined"
                       key={`${folder.eTag}-${folder.path}`}
                       style={{
-                        borderRadius: "10px",
-                        backgroundColor: "#3b3b3b",
-                        borderColor: "#505050",
-                        boxShadow: "rgb(112 109 14) 0px 1px 1px",
+                        borderRadius: "5px",
+                        backgroundColor: "#f2f2f2",
+                        borderColor: "#d6d6d6",
+                        boxShadow: "0px 1px 1px rgba(0, 0, 0, 0.1)",
+                        color: "#333",
                       }}
                     >
                       <Link href={folder.name}>

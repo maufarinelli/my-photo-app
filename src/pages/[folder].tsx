@@ -10,6 +10,7 @@ import { StorageImage } from "@aws-amplify/ui-react-storage";
 import { list, ListOutputItemWithPath } from "aws-amplify/storage";
 import VirtualScroller from "./components/VirtualScroller/VirtualScroller";
 import { getUrl } from "@aws-amplify/storage";
+import Header from "./components/Header/Header";
 
 // const API_URL = "https://tllw3d65w2.execute-api.us-east-1.amazonaws.com/dev";
 const PREVIOUS_IMAGES_QTY = 10;
@@ -168,9 +169,7 @@ const Folder: React.FC = () => {
 
   return (
     <main className={styles.main}>
-      <header style={{ margin: "20px" }}>
-        <h1>Folder: {router.query.folder}</h1>
-      </header>
+      <Header title={`Folder: ${router.query.folder}`} />
 
       {thumbnails && (
         <VirtualScroller
