@@ -68,11 +68,13 @@ const Folder: React.FC = () => {
 
         const sliderVideosPromises = await Promise.allSettled(
           sliderImages.map(async (item) => {
+            // -video.png is sufix of video thumbnails, create on the backend
             if (item.path.endsWith("-video.png")) {
               return await {
                 path: item.path.replace("-video.png", ".mp4"),
                 url: await getVideo(
                   item.path
+                    // if it is video, we don't have a mp4 duplicated in the slider folder
                     .replace("/slider/", "/")
                     .replace("-video.png", ".mp4")
                 ),
@@ -119,7 +121,8 @@ const Folder: React.FC = () => {
       imagesToLoad?.push(sliderImages?.[index + 1]);
     }
 
-    // Transform path of .png images (videos thumbnails) to to .mp4
+    // Transform path of -video.png images (videos thumbnails) to .mp4
+    // in order to get the right video from sliderVideos <video <source
     const imagesToLoadTransformed = imagesToLoad.map((image) => {
       if (image.path.endsWith("-video.png")) {
         return {

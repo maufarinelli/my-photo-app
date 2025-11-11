@@ -1,11 +1,6 @@
 const sharp = require('sharp');
 const aws = require('aws-sdk');
 const s3 = new aws.S3();
-// const FfmpegCommand = require('fluent-ffmpeg');
-// const { Writable } = require('stream');
-// const fs = require('fs');
-// const path = require('path');
-// const fsp = require('fs/promises');
 
 /**
  * 
@@ -89,102 +84,6 @@ const createResizedImages = async (imagesFetched, folder, bucket, type) => {
  * @param {*} folder One of the folders in the bucket
  * @param {*} bucket The bucket name
  */
-// const createVideoThumbnail = async (videosFetched, folder, bucket) => {
-//     const folderType = 'thumbnails';
-//     const videoFetchedPromises = [];
-//     for (const videoContent of videosFetched.Contents) {
-//         console.log('========= videoContent', videoContent);
-//         const { Key } = videoContent;
-//         if (Key.endsWith('/')) {
-//             console.log('######### Skipping folder ', Key);
-//             continue; // Skip if it's a folder or a video for slider
-//         }
-
-//         const videoName = Key.split('/').pop();
-//         const videoThumbnailName = videoName.replace('.mp4', '.png');
-//         const videoThumbnailKey = `public/${folder}/${folderType}/${videoThumbnailName}`;
-
-//         let videoThumbnailFetched;
-//         try {
-//             console.log('^^^^^^^^^ Going to fetch ', videoThumbnailKey);
-//             videoThumbnailFetched = await s3.getObject({
-//                 Bucket: bucket,
-//                 Key: videoThumbnailKey
-//             }).promise();
-//             console.log('%%%%%%%%%%%%% videoThumbnailFetched : ', videoThumbnailFetched);
-//             videoFetchedPromises.push(videoThumbnailFetched);
-//         } catch (error) {
-//             console.error('Error fetching video:', error);
-//         }
-
-//         if (!videoThumbnailFetched) {
-//             console.log(`GOING TO CREATE ${folderType} thumbnail!`);
-
-//             const originalVideoFetched = await s3.getObject({
-//                 Bucket: bucket,
-//                 Key
-//             }).promise();
-
-//             // VIDEOS
-//             console.log('######### Creating video thumbnail for ', Key);
-//             console.log('######### originalVideoFetched : ', originalVideoFetched);
-//             let screenshotBuffer = Buffer.from([]); // Initialize an empty buffer
-
-//             const writableStream = new Writable({
-//                 write(chunk, encoding, callback) {
-//                     screenshotBuffer = Buffer.concat([screenshotBuffer, chunk]);
-//                     callback();
-//                 }
-//             });
-
-//             async function writeBufferToFile(filePath, bufferData) {
-//                 try {
-//                     await fsp.writeFile(filePath, bufferData);
-//                     console.log('Buffer successfully written to file (promise-based)!', filePath);
-//                 } catch (err) {
-//                     console.error('Error writing file:', err);
-//                 }
-//             }
-//             await writeBufferToFile(path.join('/tmp', videoName), originalVideoFetched.Body);
-
-//             console.log('######### Starting to create video thumbnail for ', Key);
-//             const ffmpeg = new FfmpegCommand();
-//             ffmpeg(path.join('/tmp', videoName))
-//                 .seekInput('00:00:01') // Seek to 1 seconds into the video
-//                 .frames(1) // Extract only one frame
-//                 .outputOptions('-f png') // Output as an image format (e.g., JPEG, PNG)
-//                 .outputOptions('-vframes 1') // Ensure only one frame is processed
-//                 .outputOptions('-c:v mjpeg') // Specify the video codec for the output image (e.g., Motion JPEG)
-//                 .outputOptions('-q:v 2') // Set the quality (for JPEG, 1-31, lower is better)
-//                 .noAudio() // No audio output needed for a screenshot
-//                 .toFormat('png') // Output format (e.g., 'mjpeg' or 'png')
-//                 .pipe(writableStream) // Pipe the output to the writable stream
-//                 .on('end', () => {
-//                     // The screenshotBuffer now contains the image data
-//                     console.log('Screenshot captured in memory:', screenshotBuffer);
-//                     // You can now process or save the buffer as needed
-//                 })
-//                 .on('error', (err) => {
-//                     console.error('An error occurred: ' + err.message);
-//                 });
-
-//             console.log('######### Creating video thumbnail for ', Key);
-//             console.log(`PUT ${folderType} image `);
-//             return await s3.putObject({
-//                 Bucket: bucket,
-//                 Key: `public/${folder}/${folderType}/${videoThumbnailName}`,
-//                 Body: screenshotBuffer,
-//             }).promise();
-//         };
-//         await Promise.all(videoFetchedPromises);
-//     };
-// }
-/**
- * 
- * @param {*} videosFetched 
- * @param {*} folder One of the folders in the bucket
- * @param {*} bucket The bucket name
- */
 const createDummyVideoThumbnail = async (videosFetched, folder, bucket) => {
     const folderType = 'thumbnails';
     const videoFetchedPromises = [];
@@ -215,15 +114,6 @@ const createDummyVideoThumbnail = async (videosFetched, folder, bucket) => {
 
         if (!videoThumbnailFetched) {
             console.log(`GOING TO CREATE ${folderType} video thumbnail!`);
-
-            // const originalVideoFetched = await s3.getObject({
-            //     Bucket: bucket,
-            //     Key
-            // }).promise();
-
-            // // VIDEOS
-            // console.log('######### Creating video thumbnail for ', Key);
-            // console.log('######### originalVideoFetched : ', originalVideoFetched);
 
             const size = 96;
             const dummyVideoThumbnailImage = await sharp({
@@ -258,57 +148,6 @@ const createDummyVideoThumbnail = async (videosFetched, folder, bucket) => {
     await Promise.all(videoFetchedPromises);
 }
 
-/**
-* @param {*} videosFetched 
-* @param {*} folder One of the folders in the bucket
-* @param {*} bucket The bucket name
-*/
-const putVideoSlider = async (videosFetched, folder, bucket) => {
-    const folderType = 'slider';
-    const videoFetchedPromises = [];
-    for (const videoContent of videosFetched.Contents) {
-        console.log('========= videoContent', videoContent);
-        const { Key } = videoContent;
-        if (Key.endsWith('/')) {
-            console.log('######### Skipping folder ', Key);
-            continue; // Skip if it's a folder or a video for slider
-        }
-
-        const videoName = Key.split('/').pop();
-        const videoSliderKey = `public/${folder}/${folderType}/${videoName}`;
-
-        let videoSliderFetched;
-        try {
-            console.log('^^^^^^^^^ Going to fetch ', videoSliderKey);
-            videoSliderFetched = await s3.getObject({
-                Bucket: bucket,
-                Key: videoSliderKey
-            }).promise();
-            console.log('%%%%%%%%%%%%% videoSliderFetched : ', videoSliderFetched);
-            videoFetchedPromises.push(videoSliderFetched);
-        } catch (error) {
-            console.error('Error fetching video:', error);
-        }
-
-        if (!videoSliderFetched) {
-            console.log(`GOING TO CREATE ${folderType} video slider!`);
-
-            const originalVideoFetched = await s3.getObject({
-                Bucket: bucket,
-                Key
-            }).promise();
-
-            console.log(`PUT ${folderType} slider ${videoSliderKey}`);
-            return await s3.putObject({
-                Bucket: bucket,
-                Key: videoSliderKey,
-                Body: originalVideoFetched.Body,
-            }).promise();
-        }
-    }
-    await Promise.all(videoFetchedPromises);
-}
-
 exports.handler = async (event, context) => {
     console.log(`EVENT: ${JSON.stringify(event)}`);
     console.log(`CONTEXT: ${JSON.stringify(context)}`);
@@ -329,9 +168,6 @@ exports.handler = async (event, context) => {
         if (event.Records[0].eventName === 'ObjectCreated:CompleteMultipartUpload' && event.Records[0].s3.object.key.endsWith('.mp4')) {
             // Handling video thumbnails
             await createDummyVideoThumbnail(objectFetched, folder, BUCKET);
-
-            // Handling video slider
-            // await putVideoSlider(objectFetched, folder, BUCKET);
         } else if (event.Records[0].eventName === 'ObjectCreated:Put') {
             // Handling thumbnails
             await createResizedImages(objectFetched, folder, BUCKET, 'thumbnails');
