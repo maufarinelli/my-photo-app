@@ -57,6 +57,7 @@ const Home: React.FC = () => {
       </Head>
       <Authenticator
         signUpAttributes={["email", "phone_number", "preferred_username"]}
+        hideSignUp
       >
         <div className={`${styles.page}`}>
           <main className={styles.main}>
