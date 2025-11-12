@@ -44,10 +44,13 @@ interface VirtualScrollerProps {
   handleImageClick: (item: S3FolderFromList, index: number) => void;
 }
 const VirtualScroller: React.FC<VirtualScrollerProps> = ({
-  thumbnails,
+  thumbnails = [],
   handleImageClick,
 }) => {
   const getFullWidth = () => {
+    if (typeof window === "undefined") {
+      return 360;
+    }
     if (window.innerWidth > 1200) {
       return 1200;
     }
@@ -55,6 +58,10 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
   };
 
   const getGridRows = () => {
+    if (typeof window === "undefined") {
+      return 10;
+    }
+
     let GRID_ROWS = 10;
     if (window.innerWidth <= 470) {
       GRID_ROWS = 3;
@@ -84,11 +91,13 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
   }, []);
 
   useEffect(() => {
-    window.addEventListener("resize", handleResize);
+    if (typeof window !== "undefined") {
+      window.addEventListener("resize", handleResize);
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
   }, [handleResize]);
 
   return (
@@ -98,7 +107,9 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
       }}
       columnCount={gridRows}
       columnWidth={(fullWidth - 20) / gridRows}
-      height={window.innerHeight - HEADER_HEIGHT}
+      height={
+        typeof window !== "undefined" ? window.innerHeight - HEADER_HEIGHT : 0
+      }
       rowCount={Math.ceil(thumbnails.length / gridRows)}
       rowHeight={ROW_HEIGHT}
       width={fullWidth}
