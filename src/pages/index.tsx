@@ -8,16 +8,26 @@ import {
   useTheme,
   Flex,
 } from "@aws-amplify/ui-react";
-import { list, ListOutputItemWithPath } from "aws-amplify/storage";
+import { list } from "aws-amplify/storage";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AiOutlineFolderOpen } from "react-icons/ai";
 import Header from "./components/Header/Header";
 
+type Folder = {
+  name: string;
+  versionId?: string | undefined;
+  contentType?: string | undefined;
+  lastModified?: Date | undefined;
+  size?: number | undefined;
+  eTag?: string | undefined;
+  path: string;
+};
+
 const Home: React.FC = () => {
   const { tokens } = useTheme();
   const { user, toSignIn } = useAuthenticator((context) => [context.user]);
-  const [folders, setFolders] = useState<ListOutputItemWithPath[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
 
   useEffect(() => {
     const listFolders = async () => {

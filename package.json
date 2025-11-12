@@ -13,7 +13,6 @@
     "@aws-amplify/ui-react-storage": "^3.8.2",
     "aws-amplify": "^6.13.5",
     "axios": "^1.8.4",
-    "fluent-ffmpeg": "^2.1.3",
     "next": "15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
