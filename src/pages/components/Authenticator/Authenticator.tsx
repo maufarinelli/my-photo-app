@@ -2,7 +2,7 @@ import React from "react";
 import { Amplify } from "aws-amplify";
 import { Authenticator } from "@aws-amplify/ui-react";
 
-import awsExports from "./aws-exports";
+import awsExports from "../../../aws-exports";
 Amplify.configure(awsExports);
 
 const MyAuthenticator: React.FC = () => {
