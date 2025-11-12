@@ -1,16 +1,20 @@
 import React, { useCallback, useEffect } from "react";
 import { StorageImage } from "@aws-amplify/ui-react-storage";
-import { ListOutputItemWithPath } from "aws-amplify/storage";
-import { FixedSizeGrid as Grid, GridChildComponentProps } from "react-window";
+import { FixedSizeGrid, GridChildComponentProps } from "react-window";
+import { S3FolderFromList } from "@/types";
+
+// Type assertion to fix React 19 compatibility issue with react-window
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const FixedSizeGridTyped = FixedSizeGrid as React.ComponentType<any>;
 
 const HEADER_HEIGHT = 90;
 const ROW_HEIGHT = 110;
 
 const ImageRenderer: React.FC<
   GridChildComponentProps<{
-    thumbnails: ListOutputItemWithPath[];
+    thumbnails: S3FolderFromList[];
     gridRows: number;
-    handleImageClick: (item: ListOutputItemWithPath, index: number) => void;
+    handleImageClick: (item: S3FolderFromList, index: number) => void;
   }>
 > = ({ columnIndex, rowIndex, style, data }) => {
   const { thumbnails, handleImageClick, gridRows } = data;
@@ -36,8 +40,8 @@ const ImageRenderer: React.FC<
 };
 
 interface VirtualScrollerProps {
-  thumbnails: ListOutputItemWithPath[];
-  handleImageClick: (item: ListOutputItemWithPath, index: number) => void;
+  thumbnails: S3FolderFromList[];
+  handleImageClick: (item: S3FolderFromList, index: number) => void;
 }
 const VirtualScroller: React.FC<VirtualScrollerProps> = ({
   thumbnails,
@@ -88,7 +92,7 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
   }, [handleResize]);
 
   return (
-    <Grid
+    <FixedSizeGridTyped
       style={{
         margin: "0 10px",
       }}
@@ -101,7 +105,7 @@ const VirtualScroller: React.FC<VirtualScrollerProps> = ({
       itemData={{ thumbnails, handleImageClick, gridRows }}
     >
       {ImageRenderer}
-    </Grid>
+    </FixedSizeGridTyped>
   );
 };
 

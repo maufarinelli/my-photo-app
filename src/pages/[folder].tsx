@@ -7,19 +7,23 @@ import { AiFillCloseCircle } from "react-icons/ai";
 import "swiper/css";
 import { Navigation, Pagination } from "swiper/modules";
 import { StorageImage } from "@aws-amplify/ui-react-storage";
-import { list, ListOutputItemWithPath } from "aws-amplify/storage";
+import { list } from "aws-amplify/storage";
 import VirtualScroller from "./components/VirtualScroller/VirtualScroller";
 import { getUrl } from "@aws-amplify/storage";
 import Header from "./components/Header/Header";
+import { S3FolderFromList } from "@/types";
 
-// const API_URL = "https://tllw3d65w2.execute-api.us-east-1.amazonaws.com/dev";
 const PREVIOUS_IMAGES_QTY = 10;
 const MINIMUM_IMAGES_QTY_WHEN_10_PREVIOUS_LOADED = PREVIOUS_IMAGES_QTY + 2;
 
 const Folder: React.FC = () => {
   const router = useRouter();
-  const [thumbnails, setThumbnails] = useState<ListOutputItemWithPath[]>();
-  const [sliderImages, setSliderImages] = useState<ListOutputItemWithPath[]>();
+  const [thumbnails, setThumbnails] = useState<
+    S3FolderFromList[] | undefined
+  >();
+  const [sliderImages, setSliderImages] = useState<
+    S3FolderFromList[] | undefined
+  >();
   // sliderVideos is a map of path fetch as key and video url as value
   const [sliderVideos, setSliderVideos] = useState<Map<string, string>>(
     new Map()
@@ -27,7 +31,7 @@ const Folder: React.FC = () => {
 
   const [isSliderMode, setIsSliderMode] = useState(false);
   const [loadedSliderImages, setLoadedSliderImages] = useState<
-    ListOutputItemWithPath[]
+    S3FolderFromList[]
   >([]);
   const [selectedSliderImageIndex, setSelectedSliderImageIndex] =
     useState<number>();
@@ -59,13 +63,13 @@ const Folder: React.FC = () => {
         const sanitizedThumbnails = thumbnailsResult.items.filter(
           (item) => !item.path.endsWith("/")
         );
-        setThumbnails(sanitizedThumbnails);
+        setThumbnails(sanitizedThumbnails as S3FolderFromList[]);
 
         const sliderImages = sanitizedThumbnails.map((item) => ({
           ...item,
           path: item.path.replace("/thumbnails/", "/slider/"),
         }));
-        setSliderImages(sliderImages);
+        setSliderImages(sliderImages as S3FolderFromList[]);
 
         const sliderVideosPromises = await Promise.allSettled(
           sliderImages.map(async (item) => {
@@ -100,7 +104,7 @@ const Folder: React.FC = () => {
     listThumbnails();
   }, [router.query.folder, getVideo]);
 
-  const handleImageClick = (item: ListOutputItemWithPath, index: number) => {
+  const handleImageClick = (item: S3FolderFromList, index: number) => {
     setSelectedSliderImageIndex(index);
 
     const imagesToLoad = [sliderImages?.[index]];
@@ -124,15 +128,17 @@ const Folder: React.FC = () => {
 
     // Transform path of -video.png images (videos thumbnails) to .mp4
     // in order to get the right video from sliderVideos <video <source
-    const imagesToLoadTransformed = imagesToLoad.map((image) => {
-      if (image.path.endsWith("-video.png")) {
-        return {
-          ...image,
-          path: image.path.replace("-video.png", ".mp4"),
-        };
-      }
-      return image;
-    });
+    const imagesToLoadTransformed = imagesToLoad
+      .filter((image) => image !== undefined)
+      .map((image) => {
+        if (image.path.endsWith("-video.png")) {
+          return {
+            ...image,
+            path: image.path.replace("-video.png", ".mp4"),
+          };
+        }
+        return image;
+      });
 
     setSliderLoadededIndexes(indexToLoad);
     setLoadedSliderImages(imagesToLoadTransformed);
@@ -225,7 +231,9 @@ const Folder: React.FC = () => {
                           maxWidth: "95vw",
                           maxHeight: "95vh",
                         }}
-                        alt={selectedSliderImage.imageKey}
+                        alt={
+                          selectedSliderImage.path.split("/").pop() ?? "Image"
+                        }
                         loading="lazy"
                         onError={(e) => {
                           console.log("error loading image", e);

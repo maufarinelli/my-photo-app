@@ -13,21 +13,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AiOutlineFolderOpen } from "react-icons/ai";
 import Header from "./components/Header/Header";
-
-type Folder = {
-  name: string;
-  versionId?: string | undefined;
-  contentType?: string | undefined;
-  lastModified?: Date | undefined;
-  size?: number | undefined;
-  eTag?: string | undefined;
-  path: string;
-};
+import { S3FolderFromList } from "@/types";
 
 const Home: React.FC = () => {
   const { tokens } = useTheme();
   const { user, toSignIn } = useAuthenticator((context) => [context.user]);
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folders, setFolders] = useState<S3FolderFromList[]>([]);
 
   useEffect(() => {
     const listFolders = async () => {
